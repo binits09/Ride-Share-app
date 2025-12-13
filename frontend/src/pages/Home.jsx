@@ -10,7 +10,7 @@ const Home = () => {
     if (!token) {
       navigate("/login");
     } else {
-      navigate("/admin"); // or booking page later
+      navigate("/Ride"); //ride page 
     }
   };
 

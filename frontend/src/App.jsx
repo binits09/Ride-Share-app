@@ -8,6 +8,7 @@ import Login from './components/Login';
 import PrivateRoute from './utils/PrivateRoute';
 import Home from './pages/Home';
 import Ride from './pages/Ride';
+import AccDropM from './layouts/AccDropM';
 
 
 const App = () => {
@@ -16,10 +17,16 @@ const App = () => {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/ride" element={<Ride />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/driver-register" element={<DriverRegister />} />
+        
+        {/* Protected Routes */}
+        <Route element={<PrivateRoute />}>
+          <Route path="/ride" element={<Ride />} />
+
+        </Route>
+
       </Routes>
     </BrowserRouter>
   </>

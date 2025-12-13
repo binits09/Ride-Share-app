@@ -10,3 +10,6 @@ body {
   background-color: #ffffff;
 }
 
+.leaflet-container {
+    z-index: 0 !important;
+}
