@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import sideImage from "../assets/login-side.jpg";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -8,34 +10,41 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const navigate = useNavigate();
+
   const validate = () => {
     if (!email) return "Email is required";
     if (!/^\S+@\S+\.\S+$/.test(email)) return "Enter a valid email";
     if (!password) return "Password is required";
-    if (password.length < 6) return "Password must be at least 6 characters";
+    if (password.length < 6)
+      return "Password must be at least 6 characters";
     return null;
   };
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    const v = validate();
-    if (v) { setError(v); return; }
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     try {
       setLoading(true);
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Login failed");
+      const res = await axios.post(
+        "http://localhost:6200/api/auth/login",
+        { email, password }
+      );
 
-      console.log("Logged in:", data);
+      localStorage.setItem("token", res.data.token);
+      navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setError(
+        err.response?.data?.message || "Login failed. Try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -45,7 +54,7 @@ const Login = () => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-xl flex w-full max-w-4xl overflow-hidden">
 
-        {/* LEFT IMAGE SECTION */}
+        {/* LEFT IMAGE */}
         <div className="hidden md:block w-1/2">
           <img
             src={sideImage}
@@ -63,7 +72,7 @@ const Login = () => {
             Sign in to continue
           </p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="text-sm text-red-600 bg-red-100 p-2 rounded">
                 {error}
@@ -71,18 +80,22 @@ const Login = () => {
             )}
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Email</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Email
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Password</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Password
+              </label>
 
               <div className="relative">
                 <input
@@ -90,12 +103,12 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Your password"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500"
                 />
 
                 <button
                   type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
+                  onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600"
                 >
                   {showPassword ? "Hide" : "Show"}
@@ -103,12 +116,10 @@ const Login = () => {
               </div>
             </div>
 
-
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 disabled:opacity-60"
+              className="w-full py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-500 disabled:opacity-60"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
