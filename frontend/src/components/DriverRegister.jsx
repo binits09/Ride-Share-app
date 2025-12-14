@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import sideImage from "../assets/dr-side.jpg";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const DriverRegister = () => {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,15 +28,11 @@ const DriverRegister = () => {
     if (!password) return "Password is required";
     if (password.length < 6) return "Password must be at least 6 characters";
     if (password !== confirm) return "Passwords do not match";
-    if (!carModel.trim()) return "Car model is required";
-    if (!carNumber.trim()) return "Car number plate is required";
-    if (!platePattern.test(carNumber.trim())) return "Enter a valid car number plate";
+    if (!carModel.trim()) return "Vehicle model is required";
+    if (!carNumber.trim()) return "Vehicle number plate is required";
+    if (!platePattern.test(carNumber.trim())) return "Enter a valid vehicle number plate";
     // simple driving license pattern: letters, numbers, spaces, hyphens (3-25 chars)
     const licensePattern = /^[A-Z0-9 -]{3,25}$/i;
-
-    // inside validate()
-    if (!carNumber.trim()) return "Car number plate is required";
-    if (!platePattern.test(carNumber.trim())) return "Enter a valid car number plate";
 
     if (!drivingLicense.trim()) return "Driving license is required";
     if (!licensePattern.test(drivingLicense.trim())) return "Enter a valid driving license number";
@@ -49,29 +48,26 @@ const DriverRegister = () => {
 
     try {
       setLoading(true);
-      // replace with your backend endpoint
-      const res = await fetch("/api/auth/driver-register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // backend endpoint
+      await axios.post(
+        "http://localhost:6200/api/auth/register-driver",
+        {
           name: name.trim(),
           email,
           password,
-          carModel: carModel.trim(),
-          carNumber: carNumber.trim(),
-        }),
-      });
+          gender,
+          vehicleModel: carModel.trim(),
+          vehicleNumber: carNumber.trim(),
+          licenseNumber: drivingLicense.trim(),
+        }
+      );
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Registration failed");
-
-      console.log("Driver registered:", data);
-      // reset form or redirect as needed
-      setName(""); setEmail(""); setPassword(""); setConfirm("");
-      setCarModel(""); setCarNumber("");
-      setError("Registration successful — please sign in.");
+      alert("Driver Registration successful");
+      navigate("/login");
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setError(
+        err.response?.data?.message || "Driver Registration failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -150,7 +146,7 @@ const DriverRegister = () => {
 
             {/* New driver fields */}
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Vehical model</label>
+              <label className="block text-sm text-gray-700 mb-1">Vehicle model</label>
               <input
                 value={carModel}
                 onChange={(e) => setCarModel(e.target.value)}
@@ -160,7 +156,7 @@ const DriverRegister = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Vehical number plate</label>
+              <label className="block text-sm text-gray-700 mb-1">Vehicle number plate</label>
               <input
                 value={carNumber}
                 onChange={(e) => setCarNumber(e.target.value)}

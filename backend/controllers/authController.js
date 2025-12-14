@@ -29,7 +29,8 @@ exports.register = async (req, res) => {
       name,
       email: emailLower,
       password: hashpassword,
-      gender
+      gender,
+      role: "user",
     });
 
     await user.save();
@@ -46,6 +47,44 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: "Registration failed" });
   }
 };
+
+//driver register
+exports.registerDriver = async (req, res) => {
+  try {
+    const { name, email, password, gender, vehicleModel, vehicleNumber, licenseNumber } = req.body;
+
+    if (!name || !email || !password || !gender || !vehicleModel || !vehicleNumber || !licenseNumber) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    const existingUser = await User.findOne({ email: emailLower });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashpassword = await bcrypt.hash(password, 10);
+
+    const driver = new User({
+      name,
+      email: emailLower,
+      password: hashpassword,
+      gender,
+      role: "driver",
+      vehicleModel,           // 🔑 IMPORTANT
+      vehicleNumber,
+      licenseNumber,
+    });
+
+    await driver.save();
+
+    res.status(201).json({ message: "Driver registered successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Driver registration failed" });
+  }
+};
+
 
 //login
 exports.login = async (req, res) => {
@@ -70,6 +109,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         gender: user.gender,
+        role: user.role,
       }
     });
   } catch (err) {

@@ -41,7 +41,13 @@ const Login = () => {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/Ride", { replace: true });
+      const role = res.data.user.role;
+      if (role === "driver") {
+        navigate("/driver", { replace: true });
+      } else {
+        navigate("/ride", { replace: true });
+      }
+
     } catch (err) {
       setError(
         err.response?.data?.message || "Login failed. Try again."

@@ -8,7 +8,7 @@ import Login from './components/Login';
 import PrivateRoute from './utils/PrivateRoute';
 import Home from './pages/Home';
 import Ride from './pages/Ride';
-import AccDropM from './layouts/AccDropM';
+
 
 
 const App = () => {
