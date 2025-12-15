@@ -16,6 +16,11 @@ const driverSchema = new mongoose.Schema(
     licenseNumber: { type: String, required: true },
 
     isApproved: { type: Boolean, default: false },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+
   },
   { timestamps: true }
 );

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import sideImage from "../assets/login-side.jpg";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -9,6 +10,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
 
   const navigate = useNavigate();
 
@@ -39,11 +41,10 @@ const Login = () => {
         { email, password }
       );
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      login(res.data.token, res.data.user);
       const role = res.data.user.role;
       if (role === "driver") {
-        navigate("/driver", { replace: true });
+        navigate("/driver-home", { replace: true });
       } else {
         navigate("/ride", { replace: true });
       }

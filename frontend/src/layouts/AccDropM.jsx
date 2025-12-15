@@ -1,15 +1,29 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { updateDriverStatus } from "../services/driverApi";
+import { useAuth } from "../context/AuthContext";
+
 
 const AccDropM = ({ user, onClose }) => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    onClose();
-    navigate("/login", { replace: true });
+  const handleLogout = async () => {
+    try {
+      // If driver, set status to offline BEFORE removing token
+      if (user?.role === "driver") {
+        await updateDriverStatus(false);
+      }
+    } catch (err) {
+      console.warn("Failed to update driver status on logout");
+    } finally {
+      logout();                 // 🔥 THIS triggers Navbar update
+      onClose();
+      navigate("/login", { replace: true });
+    }
+
   };
+
 
   return (
     <div

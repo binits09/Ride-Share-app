@@ -120,6 +120,11 @@ exports.login = async (req, res) => {
       });
     }
 
+    if (role === "driver") {
+      account.isOnline = false;
+      await account.save();
+    }
+
     const token = jwt.sign(
       { id: account._id, role, email: account.email },
       process.env.JWT_SECRET,
@@ -134,6 +139,7 @@ exports.login = async (req, res) => {
         email: account.email,
         gender: account.gender,
         role,
+        isApproved: role === "driver" ? account.isApproved : true,
       },
     });
 
@@ -141,3 +147,54 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Login failed" });
   }
 };
+
+
+// GET driver online status
+exports.getDriverStatus = async (req, res) => {
+  try {
+    if (req.user.role !== "driver") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const driver = await Driver.findById(req.user.id).select("isOnline");
+
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    res.json({ isOnline: driver.isOnline });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to get driver status" });
+  }
+};
+
+// UPDATE driver online status
+exports.updateDriverStatus = async (req, res) => {
+  try {
+    if (req.user.role !== "driver") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { isOnline } = req.body;
+
+    const driver = await Driver.findById(req.user.id);
+
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    if (!driver.isApproved) {
+      return res.status(403).json({
+        message: "Driver account pending approval",
+      });
+    }
+
+    driver.isOnline = isOnline;
+    await driver.save();
+
+    res.json({ isOnline: driver.isOnline });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update driver status" });
+  }
+};
+

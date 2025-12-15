@@ -1,18 +1,34 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "../assets/home-hero.jpg";
+import { Navigate } from "react-router-dom";
 
 const Home = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser && storedUser !== "undefined"
+    ? JSON.parse(storedUser)
+    : null;
+
 
   const handleSeePrices = () => {
     if (!token) {
       navigate("/login");
+      return;
+    }
+
+    if (user?.role === "driver") {
+      navigate("/driver-home");
     } else {
-      navigate("/Ride"); //ride page 
+      navigate("/ride");
     }
   };
+
+  if (user?.role === "driver") {
+    return <Navigate to="/driver-home" replace />;
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-100">

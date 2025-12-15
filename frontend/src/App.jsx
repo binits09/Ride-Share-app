@@ -7,27 +7,41 @@ import Login from './components/Login';
 import PrivateRoute from './utils/PrivateRoute';
 import Home from './pages/Home';
 import Ride from './pages/Ride';
+import DriverUI from './pages/DriverUI';
+import DriverHome from './pages/DriverHome';
+import { AuthProvider } from './context/AuthContext';
+
 
 
 
 const App = () => {
   return <>
-<BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/driver-register" element={<DriverRegister />} />
-        
-        {/* Protected Routes */}
-        <Route element={<PrivateRoute />}>
-          <Route path="/ride" element={<Ride />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/driver-register" element={<DriverRegister />} />
 
-        </Route>
+          {/* Protected Routes */}
+          <Route element={<PrivateRoute role="user" />}>
+            <Route path="/ride" element={<Ride />} />
 
-      </Routes>
-    </BrowserRouter>
+          </Route>
+
+          <Route element={<PrivateRoute role="driver" />}>
+            <Route path="/driver-home" element={<DriverHome />} />
+            <Route path="/driver" element={<DriverUI />} />
+          </Route>
+
+
+
+
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   </>
 }
 
