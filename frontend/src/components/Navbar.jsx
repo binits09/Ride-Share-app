@@ -1,9 +1,10 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AccDropM from "../layouts/AccDropM";
 import React, { useState, useRef, useEffect } from "react";
 import { getDriverStatus, updateDriverStatus } from "../services/driverApi";
 import { useAuth } from "../context/AuthContext";
+import DriverDropM from "../layouts/DriverDropM";
 
 
 const Navbar = () => {
@@ -61,6 +62,7 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const navigate = useNavigate();
 
   return (
     <div className="w-full bg-white shadow-md shadow-gray-400 sticky top-0 z-50 overflow-visible">
@@ -97,7 +99,7 @@ const Navbar = () => {
                       alert("You need to go online first...");
                       return;
                     }
-                    window.location.href = "/driver";
+                    navigate("/driver");
                   }}
                   className="text-sm text-gray-950 px-3 py-1 rounded-full hover:font-bold hover:bg-gray-200 transition"
                 >
@@ -163,7 +165,14 @@ const Navbar = () => {
                 </div>
 
                 {/* Dropdown */}
-                {open && <AccDropM user={user} onClose={() => setOpen(false)} />}
+                {open && user?.role === "user" && (
+                  <AccDropM user={user} onClose={() => setOpen(false)} />
+                )}
+
+                {open && user?.role === "driver" && (
+                  <DriverDropM user={user} onClose={() => setOpen(false)} />
+                )}
+
               </div>
 
             </>

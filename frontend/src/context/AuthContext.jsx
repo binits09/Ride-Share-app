@@ -14,6 +14,13 @@ export const AuthProvider = ({ children }) => {
         return localStorage.getItem("token");
     });
 
+    const [authLoading, setAuthLoading] = useState(true);
+    useEffect(() => {
+        // auth initialization complete
+        setAuthLoading(false);
+    }, []);
+
+
     const [driverStatus, setDriverStatus] = useState(null); // null = unknown
     const [driverStatusLoading, setDriverStatusLoading] = useState(true);
 
@@ -63,6 +70,7 @@ export const AuthProvider = ({ children }) => {
             value={{
                 user,
                 token,
+                authLoading,
                 driverStatus,
                 driverStatusLoading,
                 setDriverStatus,

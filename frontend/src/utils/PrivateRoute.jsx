@@ -2,14 +2,23 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const PrivateRoute = ({ role }) => {
-  const { token, user } = useAuth();
+  const { token, user, authLoading } = useAuth();
 
-  // Not logged in
+console.log("PrivateRoute check:", {
+  token,
+  user,
+  authLoading,
+});
+
+  // ⏳ wait until auth is ready
+  if (authLoading) {
+    return null; // or loader
+  }
+
   if (!token || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Role mismatch
   if (role && user.role !== role) {
     return <Navigate to="/" replace />;
   }
