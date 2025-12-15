@@ -50,7 +50,7 @@ const DriverRegister = () => {
       setLoading(true);
       // backend endpoint
       await axios.post(
-        "http://localhost:6200/api/auth/register-driver",
+        "http://localhost:6200/api/drivers/register",
         {
           name: name.trim(),
           email,
@@ -97,13 +97,7 @@ const DriverRegister = () => {
 
           <form onSubmit={handleRegister} className="space-y-4">
             {error && (
-              <div
-                className={
-                  error === "Registration successful — please sign in."
-                    ? "text-sm text-green-700 bg-green-100 p-2 rounded"
-                    : "text-sm text-red-600 bg-red-100 p-2 rounded"
-                }
-              >
+              <div className="text-sm text-red-600 bg-red-100 p-2 rounded">
                 {error}
               </div>
             )}

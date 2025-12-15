@@ -1,6 +1,5 @@
-import React, { useState, useEffect}from 'react'
+import React from 'react'
 import Navbar from './components/Navbar'
-import api from './services/api'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DriverRegister from './components/DriverRegister';
 import Register from './components/Register';

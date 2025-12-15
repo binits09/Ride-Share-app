@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectdb = require('./config/db');
 const authRoutes = require("./routes/authRoutes");
+const driverRoutes = require("./routes/driverRoutes");
 
 
 dotenv.config();
@@ -12,6 +13,7 @@ app.use(cors());
 connectdb();
 
 app.use('/api/auth',authRoutes);
+app.use('/api/drivers', driverRoutes);
 app.get('/',(req,res)=>{
     res.send("api is working");
 });
