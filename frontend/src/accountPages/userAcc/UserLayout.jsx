@@ -5,17 +5,17 @@ const UserLayout = () => {
   return (
     <div className="flex min-h-[calc(100vh-64px)] bg-gray-50">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r p-4">
-        <h2 className="font-semibold mb-4">Account</h2>
+      <aside className="w-64 bg-white border-r border-gray-200 p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-gray-900 mb-8 tracking-tight">Account Menu</h2>
 
-        <nav className="space-y-1 text-sm">
-          <NavLink end to="" className="block px-3 py-2 rounded hover:bg-gray-100">
+        <nav className="space-y-2">
+          <NavLink end to="" className={({ isActive }) => `flex items-center px-4 py-3 rounded-lg transition font-medium ${isActive ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600" : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent"}`}>
             Home
           </NavLink>
-          <NavLink to="personal-info" className="block px-3 py-2 rounded hover:bg-gray-100">
+          <NavLink to="personal-info" className={({ isActive }) => `flex items-center px-4 py-3 rounded-lg transition font-medium ${isActive ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600" : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent"}`}>
             Personal info
           </NavLink>
-          <NavLink to="security" className="block px-3 py-2 rounded hover:bg-gray-100">
+          <NavLink to="security" className={({ isActive }) => `flex items-center px-4 py-3 rounded-lg transition font-medium ${isActive ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600" : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent"}`}>
             Security
           </NavLink>
         </nav>

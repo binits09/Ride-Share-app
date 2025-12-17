@@ -66,7 +66,7 @@ exports.registerDriver = async (req, res) => {
 
     const hashpassword = await bcrypt.hash(password, 10);
 
-    const driver = new Driver({
+    const driverData = {
       name,
       email: emailLower,
       password: hashpassword,
@@ -74,13 +74,21 @@ exports.registerDriver = async (req, res) => {
       vehicleModel,
       vehicleNumber,
       licenseNumber,
-    });
+    };
+
+    // Add profile picture if uploaded
+    if (req.file) {
+      driverData.profilePicture = `/uploads/${req.file.filename}`;
+    }
+
+    const driver = new Driver(driverData);
 
     await driver.save();
 
     res.status(201).json({ message: "Driver registered successfully" });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Driver registration failed" });
   }
 };
@@ -90,6 +98,7 @@ exports.registerDriver = async (req, res) => {
 //login
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password required" });
   }
@@ -140,6 +149,12 @@ exports.login = async (req, res) => {
         gender: account.gender,
         role,
         isApproved: role === "driver" ? account.isApproved : true,
+        ...(role === "driver" && {
+          vehicleModel: account.vehicleModel,
+          vehicleNumber: account.vehicleNumber,
+          licenseNumber: account.licenseNumber,
+          profilePicture: account.profilePicture,
+        }),
       },
     });
 
@@ -197,4 +212,8 @@ exports.updateDriverStatus = async (req, res) => {
     res.status(500).json({ message: "Failed to update driver status" });
   }
 };
+
+
+
+
 

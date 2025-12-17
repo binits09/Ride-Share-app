@@ -1,5 +1,5 @@
 
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import AccDropM from "../layouts/AccDropM";
 import React, { useState, useRef, useEffect } from "react";
 import { getDriverStatus, updateDriverStatus } from "../services/driverApi";
@@ -62,11 +62,11 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const navigate = useNavigate();
+  
 
   return (
     <div className="w-full bg-white shadow-md shadow-gray-400 sticky top-0 z-50 overflow-visible">
-      <header className="p-4 max-w-400 mx-auto flex justify-between items-center">
+      <header className="p-4 max-w-screen-xl mx-auto flex justify-between items-center">
 
         {/* LEFT SIDE */}
         <div className="flex items-center gap-3">
@@ -76,35 +76,36 @@ const Navbar = () => {
 
           {token && (
             <>
-              <Link
+              <NavLink
+                end
                 to={homePath}
-                className="text-sm text-gray-950 px-3 py-1 rounded-full hover:font-bold hover:bg-gray-200 transition"
+                className={({ isActive }) => `text-sm px-3 py-1 rounded-full font-medium transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-950 hover:bg-gray-200"}`}
               >
                 Home
-              </Link>
+              </NavLink>
 
               {user?.role === "user" && (
-                <Link
+                <NavLink
                   to="/ride"
-                  className="text-sm text-gray-950 px-3 py-1 rounded-full hover:font-bold hover:bg-gray-200 transition"
+                  className={({ isActive }) => `text-sm px-3 py-1 rounded-full font-medium transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-950 hover:bg-gray-200"}`}
                 >
                   Ride
-                </Link>
+                </NavLink>
               )}
 
               {user?.role === "driver" && (
-                <button
-                  onClick={() => {
+                <NavLink
+                  to="/driver"
+                  onClick={(e) => {
                     if (driverStatus !== "online") {
+                      e.preventDefault();
                       alert("You need to go online first...");
-                      return;
                     }
-                    navigate("/driver");
                   }}
-                  className="text-sm text-gray-950 px-3 py-1 rounded-full hover:font-bold hover:bg-gray-200 transition"
+                  className={({ isActive }) => `text-sm px-3 py-1 rounded-full font-medium transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-950 hover:bg-gray-200"}`}
                 >
                   Drive
-                </button>
+                </NavLink>
               )}
 
             </>
@@ -157,12 +158,21 @@ const Navbar = () => {
 
               {/* Avatar */}
               <div className="relative ml-2" ref={menuRef}>
-                <div
-                  className="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center cursor-pointer"
-                  onClick={() => setOpen((prev) => !prev)}
-                >
-                  {user?.name?.[0]?.toUpperCase()}
-                </div>
+                {user?.profilePicture ? (
+                  <img
+                    src={`http://localhost:6200${user.profilePicture}`}
+                    alt="Profile"
+                    className="w-9 h-9 rounded-full object-cover cursor-pointer border border-gray-300"
+                    onClick={() => setOpen((prev) => !prev)}
+                  />
+                ) : (
+                  <div
+                    className="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center cursor-pointer"
+                    onClick={() => setOpen((prev) => !prev)}
+                  >
+                    {user?.name?.[0]?.toUpperCase()}
+                  </div>
+                )}
 
                 {/* Dropdown */}
                 {open && user?.role === "user" && (

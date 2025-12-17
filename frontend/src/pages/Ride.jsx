@@ -16,11 +16,7 @@ const Ride = () => {
     const [rideType, setRideType] = useState("bike");
     const [options, setOptions] = useState(null);
     const [hasSearched, setHasSearched] = useState(false);
-
-
-
-
-    console.log("ORS KEY:", import.meta.env.VITE_ORS_KEY);
+    const [loading, setLoading] = useState(false);
 
 
     const searchLocation = async (query) => {
@@ -82,48 +78,57 @@ const Ride = () => {
             label: "Bike",
             baseFare: 20,
             perKm: 8,
-            speedFactor: 1.1, // slightly faster
+            speedKmH: 22,
         },
         car: {
             label: "Car",
             baseFare: 40,
             perKm: 12,
-            speedFactor: 1,
+            speedKmH: 35,
         },
     };
 
 
 
     const handleSearch = async () => {
-        const pickupCoords = await searchLocation(pickup);
-        const dropoffCoords = await searchLocation(dropoff);
+        if (!pickup || !dropoff) return;
+        setLoading(true);
+        try {
+            const pickupCoords = await searchLocation(pickup);
+            const dropoffCoords = await searchLocation(dropoff);
 
-        if (!pickupCoords || !dropoffCoords) return;
+            if (!pickupCoords || !dropoffCoords) return;
 
-        const data = await getRoute(pickupCoords, dropoffCoords);
+            const data = await getRoute(pickupCoords, dropoffCoords);
 
-        const leafletRoute = data.coordinates.map(([lng, lat]) => [lat, lng]);
-        setRoute(leafletRoute);
+            const leafletRoute = data.coordinates.map(([lng, lat]) => [lat, lng]);
+            setRoute(leafletRoute);
 
-        const km = Number((data.distance / 1000).toFixed(2));
-        const mins = Math.ceil(data.duration / 60);
+            const km = Number((data.distance / 1000).toFixed(2));
+            const mins = Math.ceil(data.duration / 60);
 
-        const results = Object.entries(RIDE_CONFIG).map(([key, cfg]) => ({
-            type: key,
-            label: cfg.label,
-            time: Math.ceil(mins / cfg.speedFactor),
-            price: Math.round(cfg.baseFare + km * cfg.perKm),
-        }));
-        setOptions(results);
-        setDistance(km);
-        setDuration(mins);
+            const results = Object.entries(RIDE_CONFIG).map(([key, cfg]) => {
+                const time = Math.max(1, Math.ceil((km / cfg.speedKmH) * 60));
+                return {
+                    type: key,
+                    label: cfg.label,
+                    time,
+                    price: Math.round(cfg.baseFare + km * cfg.perKm),
+                };
+            });
+            setOptions(results);
+            setDistance(km);
+            setDuration(mins);
 
 
-        setPosition([pickupCoords.lat, pickupCoords.lon]);
-        setPickupCoord([pickupCoords.lat, pickupCoords.lon]);
-        setDropoffCoord([dropoffCoords.lat, dropoffCoords.lon]);
+            setPosition([pickupCoords.lat, pickupCoords.lon]);
+            setPickupCoord([pickupCoords.lat, pickupCoords.lon]);
+            setDropoffCoord([dropoffCoords.lat, dropoffCoords.lon]);
 
-        setHasSearched(true);
+            setHasSearched(true);
+        } finally {
+            setLoading(false);
+        }
 
     };
 
@@ -154,10 +159,17 @@ const Ride = () => {
                     />
 
                     <button
-                        className="w-full bg-black text-white py-3 rounded"
+                        className={`w-full bg-black text-white py-3 ${loading ? "rounded-full" : "rounded"} transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60`}
                         onClick={handleSearch}
+                        disabled={loading}
                     >
-                        Search
+                        {loading && (
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                        )}
+                        <span>{loading ? "Searching..." : "Search"}</span>
                     </button>
 
                     

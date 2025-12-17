@@ -42,6 +42,11 @@ export const AuthProvider = ({ children }) => {
         setDriverStatusLoading(false);
     };
 
+    const updateUser = (updatedUserData) => {
+        localStorage.setItem("user", JSON.stringify(updatedUserData));
+        setUser(updatedUserData);
+    };
+
 
     useEffect(() => {
         if (!token || user?.role !== "driver") {
@@ -76,6 +81,7 @@ export const AuthProvider = ({ children }) => {
                 setDriverStatus,
                 login,
                 logout,
+                updateUser,
             }}
         >
             {children}

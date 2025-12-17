@@ -14,6 +14,8 @@ const driverSchema = new mongoose.Schema(
     vehicleModel: { type: String, required: true },
     vehicleNumber: { type: String, required: true },
     licenseNumber: { type: String, required: true },
+    
+    profilePicture: { type: String, default: null },
 
     isApproved: { type: Boolean, default: false },
     isOnline: {

@@ -4,12 +4,6 @@ import { useAuth } from "../context/AuthContext";
 const PrivateRoute = ({ role }) => {
   const { token, user, authLoading } = useAuth();
 
-console.log("PrivateRoute check:", {
-  token,
-  user,
-  authLoading,
-});
-
   // ⏳ wait until auth is ready
   if (authLoading) {
     return null; // or loader

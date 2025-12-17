@@ -16,9 +16,32 @@ const DriverRegister = () => {
   const [error, setError] = useState("");
   const [drivingLicense, setDrivingLicense] = useState("");
   const [gender, setGender] = useState("");
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   // simple plate pattern: letters, numbers, spaces, hyphens allowed (2-15 chars)
   const platePattern = /^[A-Z0-9 -]{2,15}$/i;
+
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Profile picture must be less than 5MB");
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      setError("Only image files are allowed");
+      return;
+    }
+
+    setProfilePicture(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setError("");
+  };
 
   const validate = () => {
     if (!name.trim()) return "Name is required";
@@ -48,17 +71,28 @@ const DriverRegister = () => {
 
     try {
       setLoading(true);
+      
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("gender", gender);
+      formData.append("vehicleModel", carModel.trim());
+      formData.append("vehicleNumber", carNumber.trim());
+      formData.append("licenseNumber", drivingLicense.trim());
+      
+      if (profilePicture) {
+        formData.append("profilePicture", profilePicture);
+      }
+
       // backend endpoint
       await axios.post(
         "http://localhost:6200/api/drivers/register",
+        formData,
         {
-          name: name.trim(),
-          email,
-          password,
-          gender,
-          vehicleModel: carModel.trim(),
-          vehicleNumber: carNumber.trim(),
-          licenseNumber: drivingLicense.trim(),
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
 
@@ -101,6 +135,36 @@ const DriverRegister = () => {
                 {error}
               </div>
             )}
+
+            {/* Profile Picture Upload */}
+            <div className="flex flex-col items-center">
+              <label className="block text-sm text-gray-700 mb-2">Profile Picture (Optional)</label>
+              <div className="flex items-center gap-4">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-gray-300">
+                    {name?.[0]?.toUpperCase() || "?"}
+                  </div>
+                )}
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePictureChange}
+                    className="hidden"
+                  />
+                  <span className="px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition border border-indigo-200 inline-block">
+                    {previewUrl ? "Change Picture" : "Upload Picture"}
+                  </span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">JPG, PNG or GIF. Max size 5MB</p>
+            </div>
 
             <div>
               <label className="block text-sm text-gray-700 mb-1">Full name</label>
