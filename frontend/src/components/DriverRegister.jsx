@@ -147,7 +147,7 @@ const DriverRegister = () => {
                     className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-gray-300">
+                  <div className="w-20 h-20 rounded-full bg-linear-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold border-2 border-gray-300">
                     {name?.[0]?.toUpperCase() || "?"}
                   </div>
                 )}
