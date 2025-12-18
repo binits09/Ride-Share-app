@@ -143,7 +143,7 @@ const PersonalInfo = () => {
                 className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
               />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold border-2 border-gray-200">
+              <div className="w-24 h-24 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-3xl font-bold border-2 border-gray-200">
                 {user?.name?.[0]?.toUpperCase() || "?"}
               </div>
             )}
