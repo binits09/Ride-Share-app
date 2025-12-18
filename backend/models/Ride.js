@@ -30,6 +30,12 @@ const rideSchema = new mongoose.Schema(
       required: true,
     },
 
+    paymentMethod: {
+      type: String,
+      enum: ["cash", "razorpay"],
+      default: "cash",
+    },
+
     status: {
       type: String,
       enum: [
@@ -41,6 +47,7 @@ const rideSchema = new mongoose.Schema(
         "ongoing",     // ride started
         "completed",   // ride finished
         "cancelled",   // cancelled by user/driver
+        "paid",        // payment completed
       ],
       default: "requested",
     },

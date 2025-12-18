@@ -24,6 +24,7 @@ app.use('/api/auth',authRoutes);
 app.use('/api/users',userRoutes);
 app.use('/api/drivers',driverRoutes);
 app.use('/api/rides',rideRoutes);
+app.use('/api/payments',require('./routes/paymentRoutes'));
 app.get('/',(req,res)=>{
     res.send("api is working");
 });

@@ -15,6 +15,9 @@ const UserLayout = () => {
           <NavLink to="personal-info" className={({ isActive }) => `flex items-center px-4 py-3 rounded-lg transition font-medium ${isActive ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600" : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent"}`}>
             Personal info
           </NavLink>
+          <NavLink to="history" className={({ isActive }) => `flex items-center px-4 py-3 rounded-lg transition font-medium ${isActive ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600" : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent"}`}>
+            Ride history
+          </NavLink>
           <NavLink to="security" className={({ isActive }) => `flex items-center px-4 py-3 rounded-lg transition font-medium ${isActive ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600" : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent"}`}>
             Security
           </NavLink>

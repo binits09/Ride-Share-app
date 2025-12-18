@@ -1,4 +1,5 @@
 const Ride = require("../models/Ride");
+const mongoose = require("mongoose");
 
 exports.requestRide = async (req, res) => {
   try {
@@ -28,7 +29,7 @@ exports.getDriverRequests = async (req, res) => {
   try {
     const rides = await Ride.find({
       $or: [
-        { driver: req.user.id, status: { $in: ["requested", "accepted", "arrived", "ongoing", "cancelled"] } },
+        { driver: req.user.id, status: { $in: ["requested", "accepted", "arrived", "ongoing", "completed", "paid", "cancelled"] } },
         { 
           status: "searching", 
           driver: { $exists: false },
@@ -252,5 +253,100 @@ exports.cancelRide = async (req, res) => {
     res.json(ride);
   } catch (err) {
     res.status(500).json({ message: "Failed to cancel ride" });
+  }
+};
+
+exports.getUserHistory = async (req, res) => {
+  try {
+    const rides = await Ride.find({
+      user: req.user.id,
+      status: { $in: ["completed", "cancelled", "paid"] },
+    })
+      .populate("driver", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(rides);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch ride history" });
+  }
+};
+
+exports.getDriverHistory = async (req, res) => {
+  try {
+    const rides = await Ride.find({
+      driver: req.user.id,
+      status: "paid",
+    })
+      .populate("user", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(rides);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch driver history" });
+  }
+};
+
+// DRIVER delete history (paid rides only)
+exports.deleteDriverHistory = async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "No ride ids provided" });
+    }
+
+    const result = await Ride.deleteMany({
+      _id: { $in: ids },
+      driver: req.user.id,
+      status: "paid",
+    });
+
+    res.json({ deleted: result.deletedCount || 0 });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete ride history" });
+  }
+};
+
+// DRIVER summary: total completed rides, total earnings, today's earnings
+exports.getDriverSummary = async (req, res) => {
+  try {
+    const driverId = req.user.id;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const totalCompleted = await Ride.countDocuments({
+      driver: driverId,
+      status: { $in: ["completed", "paid"] },
+    });
+
+    const paidRides = await Ride.find({ driver: driverId, status: "paid" }).select("fare");
+    const totalEarnings = paidRides.reduce((sum, r) => sum + (r.fare || 0), 0);
+
+    const todayPaid = await Ride.find({ driver: driverId, status: "paid", updatedAt: { $gte: startOfToday } }).select("fare updatedAt");
+    const todaysEarnings = todayPaid.reduce((sum, r) => sum + (r.fare || 0), 0);
+
+    res.json({ totalCompleted, totalEarnings, todaysEarnings });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch driver summary" });
+  }
+};
+
+// USER delete selected history entries (only non-active rides)
+exports.deleteUserHistory = async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "No ride ids provided" });
+    }
+
+    const allowedStatuses = ["completed", "cancelled", "paid"];
+    const result = await Ride.deleteMany({
+      _id: { $in: ids },
+      user: req.user.id,
+      status: { $in: allowedStatuses },
+    });
+
+    res.json({ deleted: result.deletedCount || 0 });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete ride history" });
   }
 };

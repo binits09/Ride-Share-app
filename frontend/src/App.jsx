@@ -14,6 +14,7 @@ import UserLayout from "./accountPages/userAcc/UserLayout";
 import UserH from "./accountPages/userAcc/UserH";
 import UserPersonalInfo from "./accountPages/userAcc/PersonalInfo";
 import UserSecurity from "./accountPages/userAcc/Security";
+import UserHistory from "./accountPages/userAcc/UserHistory";
 
 import DriverLayout from "./accountPages/driverAcc/DriverLayout";
 import DriverH from "./accountPages/driverAcc/DriverH";
@@ -21,6 +22,7 @@ import DriverPersonalInfo from "./accountPages/driverAcc/PersonalInfo";
 import Vehicle from "./accountPages/driverAcc/Vehicle";
 import Earnings from "./accountPages/driverAcc/Earnings";
 import DriverSecurity from "./accountPages/driverAcc/Security";
+import DriverHistory from "./accountPages/driverAcc/DriverHistory";
 
 
 
@@ -38,6 +40,7 @@ const App = () => {
               <Route index element={<UserH />} />
               <Route path="personal-info" element={<UserPersonalInfo />} />
               <Route path="security" element={<UserSecurity />} />
+              <Route path="history" element={<UserHistory />} />
             </Route>
           </Route>
 
@@ -49,6 +52,7 @@ const App = () => {
               <Route path="vehicle" element={<Vehicle />} />
               <Route path="earnings" element={<Earnings />} />
               <Route path="security" element={<DriverSecurity />} />
+              <Route path="history" element={<DriverHistory />} />
             </Route>
           </Route>
 

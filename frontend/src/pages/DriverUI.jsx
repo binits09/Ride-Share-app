@@ -14,8 +14,12 @@ const DriverUI = () => {
   const [pendingActionLoading, setPendingActionLoading] = useState({}); // { rideId: "accept" | "reject" }
   const [error, setError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
+  const [paymentNotice, setPaymentNotice] = useState(null); // { rideId, fare, method }
+  const [driverRoute, setDriverRoute] = useState(null);
+  const [pickupCoord, setPickupCoord] = useState(null);
+  const [dropoffCoord, setDropoffCoord] = useState(null);
   const lastRideIdRef = useRef(null);
-  const activeStatuses = ["accepted", "arrived", "ongoing"];
+  const activeStatuses = ["accepted", "arrived", "ongoing"]; // completed handled separately via lastRideId
   
   // 🚨 HARD GUARD
   useEffect(() => {
@@ -35,7 +39,7 @@ const DriverUI = () => {
   useEffect(() => {
     if (!token || driverStatus !== "online") return;
 
-    const activeStatuses = ["accepted", "arrived", "ongoing"];
+    const activeStatuses = ["accepted", "arrived", "ongoing"]; // exclude completed here
 
     const fetchRequests = async () => {
       try {
@@ -45,7 +49,7 @@ const DriverUI = () => {
         });
         const rides = res.data || [];
 
-        // Check if the last active ride was cancelled
+        // Check if the last active ride was cancelled or paid
         if (lastRideIdRef.current) {
           const lastRide = rides.find((r) => r._id === lastRideIdRef.current);
           if (lastRide?.status === "cancelled") {
@@ -55,18 +59,30 @@ const DriverUI = () => {
             setTimeout(() => setError(""), 5000);
             setLoading(false);
             return;
+          } else if (lastRide?.status === "paid") {
+            setPaymentNotice({ rideId: lastRide._id, fare: lastRide.fare, method: lastRide.paymentMethod });
+            setCurrentRide(null);
+            lastRideIdRef.current = null;
           }
         }
 
         // Update current ride and pause new search when active
-        const activeRide = rides.find((r) => activeStatuses.includes(r.status));
+        let activeRide = rides.find((r) => activeStatuses.includes(r.status));
+        if (!activeRide && lastRideIdRef.current) {
+          const lastRide = rides.find((r) => r._id === lastRideIdRef.current);
+          if (lastRide && lastRide.status === "completed") {
+            activeRide = lastRide;
+          }
+        }
+
         if (activeRide) {
           setCurrentRide(activeRide);
-          lastRideIdRef.current = activeRide._id;
-          setRequests([]); // pause new incoming rides while on a trip
+          if (activeStatuses.includes(activeRide.status)) {
+            lastRideIdRef.current = activeRide._id;
+          }
+          setRequests([]); // pause new incoming rides while on a trip or awaiting payment
         } else {
           setCurrentRide(null);
-          lastRideIdRef.current = null;
           setRequests(rides);
         }
 
@@ -98,6 +114,57 @@ const DriverUI = () => {
     return [22.5726, 88.3639]; // default Kolkata
   }, [currentRide, pendingRequests]);
 
+  // Build route for accepted/active ride
+  useEffect(() => {
+    const makeRoute = async () => {
+      const ride = currentRide;
+      if (!ride?.pickup?.lat || !ride?.pickup?.lng || !ride?.dropoff?.lat || !ride?.dropoff?.lng) {
+        setDriverRoute(null);
+        setPickupCoord(null);
+        setDropoffCoord(null);
+        return;
+      }
+      setPickupCoord([ride.pickup.lat, ride.pickup.lng]);
+      setDropoffCoord([ride.dropoff.lat, ride.dropoff.lng]);
+
+      try {
+        const res = await axios.post(
+          "https://api.openrouteservice.org/v2/directions/driving-car/geojson",
+          {
+            coordinates: [
+              [ride.pickup.lng, ride.pickup.lat],
+              [ride.dropoff.lng, ride.dropoff.lat],
+            ],
+          },
+          {
+            headers: {
+              Authorization: import.meta.env.VITE_ORS_KEY,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const feature = res.data?.features?.[0];
+        if (feature?.geometry?.coordinates) {
+          const leafletRoute = feature.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+          setDriverRoute(leafletRoute);
+        } else {
+          setDriverRoute(null);
+        }
+      } catch {
+        setDriverRoute(null);
+      }
+    };
+
+    // Only compute when we have an active ride
+    if (currentRide && ["accepted", "arrived", "ongoing", "completed"].includes(currentRide.status)) {
+      makeRoute();
+    } else {
+      setDriverRoute(null);
+      setPickupCoord(null);
+      setDropoffCoord(null);
+    }
+  }, [currentRide]);
+
   const refreshAfterAction = async () => {
     setActionLoading("refresh");
     try {
@@ -105,14 +172,21 @@ const DriverUI = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const rides = res.data || [];
-      const active = rides.find((r) => activeStatuses.includes(r.status));
+      let active = rides.find((r) => activeStatuses.includes(r.status));
+      if (!active && lastRideIdRef.current) {
+        const lastRide = rides.find((r) => r._id === lastRideIdRef.current);
+        if (lastRide && lastRide.status === "completed") {
+          active = lastRide;
+        } else if (lastRide && lastRide.status === "paid") {
+          setPaymentNotice({ rideId: lastRide._id, fare: lastRide.fare, method: lastRide.paymentMethod });
+          lastRideIdRef.current = null;
+        }
+      }
       if (active) {
         setCurrentRide(active);
-        lastRideIdRef.current = active._id;
         setRequests([]);
       } else {
         setCurrentRide(null);
-        lastRideIdRef.current = null;
         setRequests(rides);
       }
     } catch (err) {
@@ -156,6 +230,13 @@ const DriverUI = () => {
     }
   };
 
+  // Auto-hide payment toast after a short duration
+  useEffect(() => {
+    if (!paymentNotice) return;
+    const timer = setTimeout(() => setPaymentNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [paymentNotice]);
+
   const handleLifecycle = async (type) => {
     if (!currentRide) return;
     const map = {
@@ -177,10 +258,17 @@ const DriverUI = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const rides = refreshRes.data || [];
-      const active = rides.find((r) => activeStatuses.includes(r.status));
-      setCurrentRide(active || res.data);
-      lastRideIdRef.current = (active || res.data)?._id || null;
-      setRequests(active ? [] : rides);
+      let active = rides.find((r) => activeStatuses.includes(r.status));
+      if (!active && res.data?.status === "completed") {
+        active = res.data;
+      }
+      setCurrentRide(active || null);
+      if (active) {
+        lastRideIdRef.current = active._id;
+        setRequests([]);
+      } else {
+        setRequests(rides);
+      }
       
     } catch (err) {
       setError(err.response?.data?.message || `Failed to ${type} ride`);
@@ -203,7 +291,7 @@ const DriverUI = () => {
   return (
     <div className="flex h-[calc(100vh-64px)] p-7 gap-7">
       {/* LEFT PANEL (matched Ride.jsx styling) */}
-      <div className="bg-white rounded-2xl border border-gray-400 shadow-lg flex w-full max-w-xl overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-400 shadow-lg flex w-full max-w-lg overflow-hidden">
         <div className="w-full p-6 bg-white shadow-lg z-10">
           <h2 className="text-xl font-semibold mb-2">Driver Dashboard</h2>
 
@@ -282,29 +370,38 @@ const DriverUI = () => {
               </div>
 
               {/* Lifecycle actions */}
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  onClick={() => handleLifecycle("arrive")}
-                  disabled={currentRide.status !== "accepted" || actionLoading === "arrive"}
-                  className="px-3 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-300"
-                >
-                  {actionLoading === "arrive" ? "Arriving..." : "Arrived"}
-                </button>
-                <button
-                  onClick={() => handleLifecycle("start")}
-                  disabled={(currentRide.status !== "arrived" && currentRide.status !== "accepted") || actionLoading === "start"}
-                  className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-300"
-                >
-                  {actionLoading === "start" ? "Starting..." : "Start"}
-                </button>
-                <button
-                  onClick={() => handleLifecycle("complete")}
-                  disabled={currentRide.status !== "ongoing" || actionLoading === "complete"}
-                  className="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-300"
-                >
-                  {actionLoading === "complete" ? "Completing..." : "Complete"}
-                </button>
-              </div>
+              {currentRide.status !== "completed" ? (
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => handleLifecycle("arrive")}
+                    disabled={currentRide.status !== "accepted" || actionLoading === "arrive"}
+                    className="px-3 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    {actionLoading === "arrive" ? "Arriving..." : "Arrived"}
+                  </button>
+                  <button
+                    onClick={() => handleLifecycle("start")}
+                    disabled={(currentRide.status !== "arrived" && currentRide.status !== "accepted") || actionLoading === "start"}
+                    className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    {actionLoading === "start" ? "Starting..." : "Start"}
+                  </button>
+                  <button
+                    onClick={() => handleLifecycle("complete")}
+                    disabled={currentRide.status !== "ongoing" || actionLoading === "complete"}
+                    className="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    {actionLoading === "complete" ? "Completing..." : "Complete"}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm">
+                    ⏳ Ride completed. Awaiting rider payment…
+                  </div>
+                  <p className="text-xs text-gray-600">New requests are paused until payment is confirmed.</p>
+                </div>
+              )}
             </div>
           )}
           {statusMessage && (
@@ -315,10 +412,19 @@ const DriverUI = () => {
         </div>
       </div>
 
+      {paymentNotice && (
+        <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
+          <div className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg min-w-[220px]">
+            <p className="font-semibold">Payment completed</p>
+            <p className="text-sm">Fare ₹{paymentNotice.fare} received via {paymentNotice.method || "cash"}.</p>
+          </div>
+        </div>
+      )}
+
       {/* MAP (matched Ride.jsx container) */}
       <div className="bg-white rounded-2xl shadow-lg flex w-full overflow-hidden h-full">
         <div className="w-full h-full">
-          <MapView position={pickupPosition} />
+          <MapView position={pickupPosition} route={driverRoute} pickup={pickupCoord} dropoff={dropoffCoord} />
         </div>
       </div>
     </div>
