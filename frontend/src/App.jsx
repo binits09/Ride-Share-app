@@ -10,6 +10,7 @@ import Ride from './pages/Ride';
 import DriverUI from './pages/DriverUI';
 import DriverHome from './pages/DriverHome';
 import AdminPage from './pages/AdminPage';
+import AiBot from './pages/AiBot';
 // AuthProvider is already applied in main.jsx; avoid double providers
 import UserLayout from "./accountPages/userAcc/UserLayout";
 import UserH from "./accountPages/userAcc/UserH";
@@ -69,7 +70,7 @@ const App = () => {
           {/* Protected Routes */}
           <Route element={<PrivateRoute role="user" />}>
             <Route path="/ride" element={<Ride />} />
-
+            <Route path="/ai-chat" element={<AiBot />} />
           </Route>
 
           <Route element={<PrivateRoute role="driver" />}>
@@ -80,6 +81,7 @@ const App = () => {
           {/* Admin Routes */}
           <Route element={<PrivateRoute role="admin" />}>
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/ai-chat" element={<AiBot />} />
           </Route>
 
         </Routes>

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import sideImage from "../assets/register-side.jpg";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Toast from "./Toast";
+import { useToast } from "../utils/useToast";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -14,6 +16,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const { toasts, showToast, removeToast } = useToast();
 
   const validate = () => {
     if (!name.trim()) return "Name is required";
@@ -47,8 +50,8 @@ const Register = () => {
         gender,
       });
 
-      alert("Registration successful");
-      navigate("/login");
+      showToast("Registration successful!", "success");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
       setError(
         err.response?.data?.message || "Registration failed"
@@ -59,6 +62,16 @@ const Register = () => {
   };
 
   return (
+    <>
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+          duration={toast.duration}
+        />
+      ))}
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-xl flex w-full max-w-4xl overflow-hidden">
 
@@ -189,6 +202,7 @@ const Register = () => {
 
       </div>
     </div>
+    </>
   );
 };
 

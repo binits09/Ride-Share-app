@@ -2,17 +2,20 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import sideImage from "../assets/driver-main.jpg";
 import { useAuth } from "../context/AuthContext";
+import Toast from "../components/Toast";
+import { useToast } from "../utils/useToast";
 
 
 
 const DriverHome = () => {
   const navigate = useNavigate();
   const { user, driverStatus } = useAuth();
+  const { toasts, showToast, removeToast } = useToast();
   
 
   const handleStartDriving = () => {
   if (driverStatus !== "online") {
-    alert("You need to go online first to start driving...");
+    showToast("You need to go online first to start driving...", "warning");
     return;
   }
   navigate("/driver");
@@ -21,6 +24,16 @@ const DriverHome = () => {
 
 
   return (
+    <>
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+          duration={toast.duration}
+        />
+      ))}
     <div className="min-h-[calc(100vh-64px)] bg-gray-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-xl flex w-full max-w-6xl overflow-hidden">
 
@@ -76,6 +89,7 @@ const DriverHome = () => {
 
       </div>
     </div>
+    </>
   );
 };
 

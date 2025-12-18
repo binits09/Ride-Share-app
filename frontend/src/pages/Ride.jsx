@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import MapView from "../components/MapView";
 import { useAuth } from "../context/AuthContext";
@@ -29,6 +29,10 @@ const Ride = () => {
     const [paymentMethod, setPaymentMethod] = useState("cash");
     const [processingPayment, setProcessingPayment] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [pickupSuggestions, setPickupSuggestions] = useState([]);
+    const [dropoffSuggestions, setDropoffSuggestions] = useState([]);
+    const pickupTimerRef = useRef(null);
+    const dropoffTimerRef = useRef(null);
 
     // Persist dismissal across refresh using localStorage
     const getDismissKey = (rideId) => {
@@ -69,6 +73,67 @@ const Ride = () => {
                 lon: parseFloat(res.data[0].lon),
             };
         }
+    };
+
+    const fetchSuggestions = async (query) => {
+        if (!query || query.trim().length < 3) return [];
+        const res = await axios.get("https://nominatim.openstreetmap.org/search", {
+            params: {
+                q: query,
+                format: "json",
+                limit: 5,
+                addressdetails: 1,
+            },
+        });
+        return (res.data || []).map((item) => ({
+            label: item.display_name,
+            lat: parseFloat(item.lat),
+            lon: parseFloat(item.lon),
+        }));
+    };
+
+    const SAME_EPS = 1e-4;
+    const isSameCoordsObj = (a, b) => {
+        if (!a || !b) return false;
+        return Math.abs(a.lat - b.lat) < SAME_EPS && Math.abs(a.lon - b.lon) < SAME_EPS;
+    };
+
+    const handlePickupChange = (e) => {
+        const value = e.target.value;
+        setPickup(value);
+        setError("");
+        if (pickupTimerRef.current) clearTimeout(pickupTimerRef.current);
+        if (!value || value.trim().length < 3) {
+            setPickupSuggestions([]);
+            return;
+        }
+        pickupTimerRef.current = setTimeout(async () => {
+            try {
+                const sug = await fetchSuggestions(value);
+                setPickupSuggestions(sug);
+            } catch (err) {
+                // silently ignore suggestion errors
+            }
+        }, 300);
+    };
+
+    const handleDropoffChange = (e) => {
+        const value = e.target.value;
+        setDropoff(value);
+        setError("");
+        if (dropoffTimerRef.current) clearTimeout(dropoffTimerRef.current);
+        if (!value || value.trim().length < 3) {
+            setDropoffSuggestions([]);
+            return;
+        }
+        dropoffTimerRef.current = setTimeout(async () => {
+            try {
+                const sug = await fetchSuggestions(value);
+                setDropoffSuggestions(sug);
+            } catch (err) {
+                // silently ignore suggestion errors
+            }
+        }, 300);
     };
 
 
@@ -124,12 +189,21 @@ const Ride = () => {
 
     const handleSearch = async () => {
         if (!pickup || !dropoff) return;
+        if (pickup.trim().toLowerCase() === dropoff.trim().toLowerCase()) {
+            setError("You can't select same place for pickup and dropoff");
+            return;
+        }
         setLoading(true);
         try {
             const pickupCoords = await searchLocation(pickup);
             const dropoffCoords = await searchLocation(dropoff);
 
             if (!pickupCoords || !dropoffCoords) return;
+
+            if (isSameCoordsObj(pickupCoords, dropoffCoords)) {
+                setError("You can't select same place for pickup and dropoff");
+                return;
+            }
 
             const data = await getRoute(pickupCoords, dropoffCoords);
 
@@ -400,28 +474,88 @@ const Ride = () => {
     return (
         <div className="flex h-[calc(100vh-64px)] p-7 gap-7">
 
-            <div className="bg-white rounded-2xl border border-gray-400 shadow-lg flex w-full max-w-lg overflow-hidden">
+            <div className="relative bg-white rounded-2xl ring-1 ring-blue-300/40 shadow-2xl shadow-blue-200/60 hover:ring-blue-500/50 transition flex w-full max-w-lg overflow-hidden">
 
                 {/* LEFT PANEL */}
                 <div className="w-full p-6 bg-white shadow-lg z-10">
-                    <h2 className="text-xl font-semibold mb-4">Get a ride</h2>
+                    <h2 className="text-xl font-semibold mb-2">Get a ride</h2>
+                    {error && (
+                        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 text-red-700 px-3 py-2">
+                            {error}
+                        </div>
+                    )}
 
                     {/* Only show search inputs when no active ride */}
                     {!myRide?.status?.match(/searching|requested|accepted|arrived|ongoing/) && (
                         <>
-                            <input
-                                value={pickup}
-                                onChange={(e) => setPickup(e.target.value)}
-                                placeholder="Pickup location"
-                                className="w-full p-3 mb-3 border rounded"
-                            />
+                            <div className="relative mb-3">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">📍</span>
+                                <input
+                                    value={pickup}
+                                    onChange={handlePickupChange}
+                                    onBlur={() => setTimeout(() => setPickupSuggestions([]), 200)}
+                                    placeholder="Pickup location"
+                                    className="w-full pl-10 p-3 rounded-xl bg-gray-50 ring-1 ring-gray-300/70 focus:ring-2 focus:ring-blue-500 focus:bg-white transition shadow-sm placeholder:text-gray-400"
+                                />
+                                {pickupSuggestions.length > 0 && (
+                                    <div className="absolute left-0 right-0 mt-1 bg-white rounded-xl shadow-lg ring-1 ring-gray-200 max-h-48 overflow-auto z-20">
+                                        {pickupSuggestions.map((s, idx) => (
+                                            <button
+                                                key={`p-${idx}`}
+                                                type="button"
+                                                className="w-full text-left p-2 hover:bg-gray-50"
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    if (dropoffCoord && Math.abs(dropoffCoord[0] - s.lat) < 1e-4 && Math.abs(dropoffCoord[1] - s.lon) < 1e-4) {
+                                                        setError("You can't select same place for pickup and dropoff");
+                                                        return;
+                                                    }
+                                                    setPickup(s.label);
+                                                    setPickupCoord([s.lat, s.lon]);
+                                                    setPosition([s.lat, s.lon]);
+                                                    setPickupSuggestions([]);
+                                                }}
+                                            >
+                                                {s.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
-                            <input
-                                value={dropoff}
-                                onChange={(e) => setDropoff(e.target.value)}
-                                placeholder="Dropoff location"
-                                className="w-full p-3 mb-3 border rounded"
-                            />
+                            <div className="relative mb-3">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🎯</span>
+                                <input
+                                    value={dropoff}
+                                    onChange={handleDropoffChange}
+                                    onBlur={() => setTimeout(() => setDropoffSuggestions([]), 200)}
+                                    placeholder="Dropoff location"
+                                    className="w-full pl-10 p-3 rounded-xl bg-gray-50 ring-1 ring-gray-300/70 focus:ring-2 focus:ring-blue-500 focus:bg-white transition shadow-sm placeholder:text-gray-400"
+                                />
+                                {dropoffSuggestions.length > 0 && (
+                                    <div className="absolute left-0 right-0 mt-1 bg-white rounded-xl shadow-lg ring-1 ring-gray-200 max-h-48 overflow-auto z-20">
+                                        {dropoffSuggestions.map((s, idx) => (
+                                            <button
+                                                key={`d-${idx}`}
+                                                type="button"
+                                                className="w-full text-left p-2 hover:bg-gray-50"
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault();
+                                                    if (pickupCoord && Math.abs(pickupCoord[0] - s.lat) < 1e-4 && Math.abs(pickupCoord[1] - s.lon) < 1e-4) {
+                                                        setError("You can't select same place for pickup and dropoff");
+                                                        return;
+                                                    }
+                                                    setDropoff(s.label);
+                                                    setDropoffCoord([s.lat, s.lon]);
+                                                    setDropoffSuggestions([]);
+                                                }}
+                                            >
+                                                {s.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             <button
                                 className={`w-full bg-black text-white py-3 ${loading ? "rounded-full" : "rounded"} transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60`}

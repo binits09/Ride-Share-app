@@ -5,12 +5,15 @@ import React, { useState, useRef, useEffect } from "react";
 import { getDriverStatus, updateDriverStatus } from "../services/driverApi";
 import { useAuth } from "../context/AuthContext";
 import DriverDropM from "../layouts/DriverDropM";
+import Toast from "./Toast";
+import { useToast } from "../utils/useToast";
 
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const location = useLocation();
+  const { toasts, showToast, removeToast } = useToast();
 
   const { user, token, driverStatus, setDriverStatus } = useAuth();
   const homePath =
@@ -50,7 +53,7 @@ const Navbar = () => {
       setDriverStatus(updatedStatus);
 
     } catch (err) {
-      alert("Failed to update status");
+      showToast("Failed to update status", "error");
     } finally {
       setLoadingStatus(false);
     }
@@ -71,6 +74,16 @@ const Navbar = () => {
   
 
   return (
+    <>
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+          duration={toast.duration}
+        />
+      ))}
     <div className="w-full bg-white shadow-md shadow-gray-400 sticky top-0 z-50 overflow-visible">
       <header className="p-4 max-w-screen-xl mx-auto flex justify-between items-center">
 
@@ -105,7 +118,7 @@ const Navbar = () => {
                   onClick={(e) => {
                     if (driverStatus !== "online") {
                       e.preventDefault();
-                      alert("You need to go online first...");
+                      showToast("You need to go online first...", "warning");
                     }
                   }}
                   className={({ isActive }) => `text-sm px-3 py-1 rounded-full font-medium transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-950 hover:bg-gray-200"}`}
@@ -162,6 +175,34 @@ const Navbar = () => {
                 </button>
               )}
 
+              {/* AI Chat Icon - Only for users and admins */}
+              {(user?.role === "user" || user?.role === "admin") && (
+                <NavLink
+                  to="/ai-chat"
+                  className={({ isActive }) => `flex items-center gap-1 px-3 py-1 rounded-full font-medium transition ${isActive ? "bg-blue-100 text-blue-700" : "text-gray-950 hover:bg-gray-200"}`}
+                  title="AI Assistant"
+                >
+                  {({ isActive }) => (
+                    <>
+                      <svg
+                        className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-700"}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium hidden sm:inline">AI</span>
+                    </>
+                  )}
+                </NavLink>
+              )}
+
               {/* Avatar */}
               <div className="relative ml-2" ref={menuRef}>
                 {user?.profilePicture ? (
@@ -200,7 +241,7 @@ const Navbar = () => {
       </header>
 
     </div>
-
+    </>
   );
 };
 

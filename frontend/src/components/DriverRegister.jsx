@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import sideImage from "../assets/dr-side.jpg";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Toast from "./Toast";
+import { useToast } from "../utils/useToast";
 
 const DriverRegister = () => {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ const DriverRegister = () => {
   const [gender, setGender] = useState("");
   const [profilePicture, setProfilePicture] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const { toasts, showToast, removeToast } = useToast();
 
   // simple plate pattern: letters, numbers, spaces, hyphens allowed (2-15 chars)
   const platePattern = /^[A-Z0-9 -]{2,15}$/i;
@@ -96,8 +99,8 @@ const DriverRegister = () => {
         }
       );
 
-      alert("Driver Registration successful");
-      navigate("/login");
+      showToast("Driver Registration successful!", "success");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
       setError(
         err.response?.data?.message || "Driver Registration failed"
@@ -108,6 +111,16 @@ const DriverRegister = () => {
   };
 
   return (
+    <>
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+          duration={toast.duration}
+        />
+      ))}
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-xl flex w-full max-w-4xl overflow-hidden">
 
@@ -285,6 +298,7 @@ const DriverRegister = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
