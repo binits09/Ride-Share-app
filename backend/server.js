@@ -25,6 +25,9 @@ app.use('/api/users',userRoutes);
 app.use('/api/drivers',driverRoutes);
 app.use('/api/rides',rideRoutes);
 app.use('/api/payments',require('./routes/paymentRoutes'));
+app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/help", require("./routes/helpRoutes"));
+
 app.get('/',(req,res)=>{
     res.send("api is working");
 });

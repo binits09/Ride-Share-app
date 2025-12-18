@@ -75,7 +75,7 @@ const AccDropM = ({ user, onClose }) => {
         <button
           type="button"
           onClick={() => {
-            navigate("/help");
+            navigate("/account/user/help");
             onClose();
           }}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-slate-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

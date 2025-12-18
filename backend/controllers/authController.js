@@ -134,6 +134,14 @@ exports.login = async (req, res) => {
       await account.save();
     }
 
+    // Determine admin role via flag or configured email
+    if (role === "user") {
+      const adminEmail = process.env.ADMIN_EMAIL && process.env.ADMIN_EMAIL.toLowerCase().trim();
+      if (account.isAdmin || (adminEmail && account.email.toLowerCase().trim() === adminEmail)) {
+        role = "admin";
+      }
+    }
+
     const token = jwt.sign(
       { id: account._id, role, email: account.email },
       process.env.JWT_SECRET,

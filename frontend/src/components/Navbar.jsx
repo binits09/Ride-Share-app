@@ -1,5 +1,5 @@
 
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import AccDropM from "../layouts/AccDropM";
 import React, { useState, useRef, useEffect } from "react";
 import { getDriverStatus, updateDriverStatus } from "../services/driverApi";
@@ -10,10 +10,16 @@ import DriverDropM from "../layouts/DriverDropM";
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  const location = useLocation();
 
   const { user, token, driverStatus, setDriverStatus } = useAuth();
   const homePath =
     user?.role === "driver" ? "/driver-home" : "/";
+  
+  // Hide navbar on admin page
+  if (location.pathname === "/admin") {
+    return null;
+  }
 
 
   const [loadingStatus, setLoadingStatus] = useState(false);

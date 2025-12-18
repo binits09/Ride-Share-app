@@ -43,7 +43,9 @@ const Login = () => {
 
       login(res.data.token, res.data.user);
       const role = res.data.user.role;
-      if (role === "driver") {
+      if (role === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (role === "driver") {
         navigate("/driver-home", { replace: true });
       } else {
         navigate("/ride", { replace: true });

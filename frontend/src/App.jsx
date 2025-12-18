@@ -9,12 +9,14 @@ import Home from './pages/Home';
 import Ride from './pages/Ride';
 import DriverUI from './pages/DriverUI';
 import DriverHome from './pages/DriverHome';
-import { AuthProvider } from './context/AuthContext';
+import AdminPage from './pages/AdminPage';
+// AuthProvider is already applied in main.jsx; avoid double providers
 import UserLayout from "./accountPages/userAcc/UserLayout";
 import UserH from "./accountPages/userAcc/UserH";
 import UserPersonalInfo from "./accountPages/userAcc/PersonalInfo";
 import UserSecurity from "./accountPages/userAcc/Security";
 import UserHistory from "./accountPages/userAcc/UserHistory";
+import UserHelp from "./accountPages/userAcc/UserHelp";
 
 import DriverLayout from "./accountPages/driverAcc/DriverLayout";
 import DriverH from "./accountPages/driverAcc/DriverH";
@@ -23,14 +25,14 @@ import Vehicle from "./accountPages/driverAcc/Vehicle";
 import Earnings from "./accountPages/driverAcc/Earnings";
 import DriverSecurity from "./accountPages/driverAcc/Security";
 import DriverHistory from "./accountPages/driverAcc/DriverHistory";
+import DriverHelp from "./accountPages/driverAcc/DriverHelp";
 
 
 
 
 const App = () => {
   return <>
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
         <Navbar />
         <Routes>
         
@@ -41,6 +43,7 @@ const App = () => {
               <Route path="personal-info" element={<UserPersonalInfo />} />
               <Route path="security" element={<UserSecurity />} />
               <Route path="history" element={<UserHistory />} />
+              <Route path="help" element={<UserHelp />} />
             </Route>
           </Route>
 
@@ -53,6 +56,7 @@ const App = () => {
               <Route path="earnings" element={<Earnings />} />
               <Route path="security" element={<DriverSecurity />} />
               <Route path="history" element={<DriverHistory />} />
+              <Route path="help" element={<DriverHelp />} />
             </Route>
           </Route>
 
@@ -73,9 +77,13 @@ const App = () => {
             <Route path="/driver" element={<DriverUI />} />
           </Route>
 
+          {/* Admin Routes */}
+          <Route element={<PrivateRoute role="admin" />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
+
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
   </>
 }
 
