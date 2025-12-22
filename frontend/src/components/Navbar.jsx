@@ -38,7 +38,7 @@ const Navbar = () => {
         setDriverStatus("offline");
       });
 
-  }, [token, user?.role, user?.id]);
+  }, [token, user?.role]);
 
 
   const toggleDriverStatus = async () => {
@@ -85,7 +85,7 @@ const Navbar = () => {
         />
       ))}
     <div className="w-full bg-white shadow-md shadow-gray-400 sticky top-0 z-50 overflow-visible">
-      <header className="p-4 max-w-screen-xl mx-auto flex justify-between items-center">
+      <header className="p-4 max-w-7xl mx-auto flex justify-between items-center">
 
         {/* LEFT SIDE */}
         <div className="flex items-center gap-3">

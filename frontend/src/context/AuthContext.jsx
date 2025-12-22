@@ -43,8 +43,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateUser = (updatedUserData) => {
-        localStorage.setItem("user", JSON.stringify(updatedUserData));
-        setUser(updatedUserData);
+        // Merge with existing user data to preserve fields like role
+        const mergedUser = { ...user, ...updatedUserData };
+        localStorage.setItem("user", JSON.stringify(mergedUser));
+        setUser(mergedUser);
     };
 
 
